@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>F.R.I.D.A.Y.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#04060c;
+    --panel:rgba(10,16,30,0.68);
+    --panel-solid:#0a0f1e;
+    --line:rgba(120,170,255,0.14);
+    --cyan:#00e5ff;
+    --green:#23ffb0;
+    --amber:#ffb020;
+    --violet:#b892ff;
+    --red:#ff4d6d;
+    --text-main:#dce8ff;
+    --text-dim:#5d6f92;
+    --state-color:#1c7fa8;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(ellipse 900px 500px at 50% -10%, rgba(0,150,220,0.13), transparent 60%),
+      radial-gradient(ellipse 700px 500px at 90% 110%, rgba(140,90,255,0.08), transparent 60%),
+      var(--void);
+    color:var(--text-main);
+    font-family:'JetBrains Mono', monospace;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:18px;
+  }
+  .app{
+    width:100%;
+    max-width:620px;
+    position:relative;
+    border:1px solid var(--line);
+    border-radius:14px;
+    background:var(--panel);
+    backdrop-filter:blur(10px);
+    padding:22px 22px 18px;
+    box-shadow:0 0 0 1px rgba(255,255,255,0.02), 0 30px 80px -20px rgba(0,0,0,0.7);
+  }
+  .app::before,.app::after,.corner-br,.corner-bl{
+    content:"";
+    position:absolute;
+    width:22px;height:22px;
+    border-color:var(--state-color);
+    border-style:solid;
+    border-width:0;
+    opacity:0.85;
+    transition:border-color .4s ease;
+    pointer-events:none;
+  }
+  .app::before{top:-1px;left:-1px;border-top-width:2px;border-left-width:2px;border-radius:14px 0 0 0;}
+  .app::after{top:-1px;right:-1px;border-top-width:2px;border-right-width:2px;border-radius:0 14px 0 0;}
+  .corner-bl{bottom:-1px;left:-1px;border-bottom-width:2px;border-left-width:2px;border-radius:0 0 0 14px;}
+  .corner-br{bottom:-1px;right:-1px;border-bottom-width:2px;border-right-width:2px;border-radius:0 0 14px 0;}
+
+  header{text-align:center;margin-bottom:6px;}
+  .brand{
+    font-family:'Orbitron',sans-serif;
+    font-weight:900;
+    letter-spacing:.35em;
+    font-size:clamp(18px,4.5vw,24px);
+    background:linear-gradient(90deg,var(--cyan),var(--violet));
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    padding-left:.35em;
+  }
+  .tagline{
+    font-size:10px;
+    letter-spacing:.2em;
+    color:var(--text-dim);
+    margin-top:4px;
+    text-transform:uppercase;
+  }
+
+  .core-wrap{
+    position:relative;
+    width:min(220px,52vw);
+    height:min(220px,52vw);
+    margin:14px auto 4px;
+    cursor:pointer;
+  }
+  canvas#core{width:100%;height:100%;display:block;}
+  .status-label{
+    text-align:center;
+    font-family:'Orbitron',sans-serif;
+    font-weight:700;
+    font-size:12.5px;
+    letter-spacing:.14em;
+    color:var(--state-color);
+    text-shadow:0 0 12px var(--state-color);
+    transition:color .4s ease;
+    margin-bottom:14px;
+    min-height:16px;
+  }
+  .hint{
+    text-align:center;
+    font-size:10.5px;
+    color:var(--text-dim);
+    margin:-8px 0 14px;
+    letter-spacing:.03em;
+  }
+
+  .transcript{
+    background:rgba(4,7,14,0.65);
+    border:1px solid var(--line);
+    border-radius:8px;
+    height:230px;
+    overflow-y:auto;
+    padding:12px 14px;
+    font-size:12.5px;
+    line-height:1.55;
+  }
+  .transcript::-webkit-scrollbar{width:7px;}
+  .transcript::-webkit-scrollbar-thumb{background:var(--line);border-radius:6px;}
+  .msg{margin-bottom:10px;word-wrap:break-word;}
+  .msg .who{font-weight:600;letter-spacing:.05em;margin-right:6px;}
+  .msg.you .who{color:#8ad1ff;}
+  .msg.friday .who{color:var(--cyan);}
+  .msg.system{color:var(--amber);font-style:italic;font-size:11.5px;opacity:.9;}
+  .msg.system .who{color:var(--amber);}
+
+  .input-row{
+    display:flex;
+    gap:8px;
+    margin-top:10px;
+  }
+  input#textInput{
+    flex:1;
+    background:rgba(4,7,14,0.7);
+    border:1px solid var(--line);
+    border-radius:7px;
+    color:var(--text-main);
+    font-family:'JetBrains Mono',monospace;
+    font-size:12.5px;
+    padding:10px 12px;
+    outline:none;
+    transition:border-color .2s ease;
+  }
+  input#textInput:focus{border-color:var(--cyan);}
+  input#textInput::placeholder{color:var(--text-dim);}
+
+  .settings-row{
+    display:none;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:8px;
+    align-items:center;
+  }
+  .settings-row.open{display:flex;}
+  .settings-row input#apiKeyInput{
+    flex:1 1 200px;
+    background:rgba(4,7,14,0.7);
+    border:1px solid var(--line);
+    border-radius:7px;
+    color:var(--text-main);
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    padding:9px 11px;
+    outline:none;
+  }
+  .settings-row input#apiKeyInput:focus{border-color:var(--violet);}
+  .settings-note{
+    flex-basis:100%;
+    font-size:9.5px;
+    color:var(--text-dim);
+    line-height:1.4;
+  }
+
+  button{
+    font-family:'JetBrains Mono',monospace;
+    cursor:pointer;
+  }
+  button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px;}
+
+  .iconbtn{
+    background:rgba(4,7,14,0.7);
+    border:1px solid var(--line);
+    border-radius:7px;
+    color:var(--text-main);
+    font-size:14px;
+    padding:0 13px;
+  }
+  .iconbtn:hover{border-color:var(--cyan);}
+  .iconbtn.active{border-color:var(--green);color:var(--green);}
+
+  .controls{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:12px;
+  }
+  .controls button{
+    flex:1 1 auto;
+    min-width:100px;
+    background:rgba(4,7,14,0.55);
+    border:1px solid var(--line);
+    color:var(--text-main);
+    font-size:10.5px;
+    font-weight:600;
+    letter-spacing:.08em;
+    padding:10px 8px;
+    border-radius:7px;
+    transition:all .18s ease;
+  }
+  .controls button:hover{border-color:var(--state-color);color:var(--state-color);}
+  #wakeBtn:hover{border-color:var(--cyan);color:var(--cyan);}
+  #interviewBtn:hover{border-color:var(--violet);color:var(--violet);}
+  #sleepBtn:hover{border-color:var(--red);color:var(--red);}
+  #clearBtn:hover{border-color:var(--amber);color:var(--amber);}
+
+  footer{
+    text-align:center;
+    font-size:9.5px;
+    color:var(--text-dim);
+    margin-top:14px;
+    letter-spacing:.05em;
+  }
+
+  @media (max-width:420px){
+    .brand{letter-spacing:.22em;}
+    .controls button{font-size:9.5px;padding:9px 6px;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    * {animation-duration:0.001ms !important;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app" id="appShell">
+  <div class="corner-bl"></div><div class="corner-br"></div>
+  <header>
+    <div class="brand">F·R·I·D·A·Y</div>
+    <div class="tagline">Arc-core interface // built for Syed</div>
+  </header>
+
+  <div class="core-wrap" id="coreWrap" title="Double-click to wake">
+    <canvas id="core" width="440" height="440"></canvas>
+  </div>
+  <div class="status-label" id="statusLabel">STANDBY</div>
+  <div class="hint" id="hintLine">Press WAKE, or double-click the core, to bring me online.</div>
+
+  <div class="transcript" id="log"></div>
+
+  <div class="input-row">
+    <input id="textInput" placeholder="Type a command, Boss…" autocomplete="off">
+    <button class="iconbtn" id="micBtn" title="Voice input">🎙</button>
+    <button class="iconbtn" id="voiceBtn" title="Toggle spoken replies">🔊</button>
+    <button class="iconbtn" id="keyBtn" title="API key settings">🔑</button>
+  </div>
+
+  <div class="settings-row" id="settingsRow">
+    <input id="apiKeyInput" type="password" placeholder="Anthropic API key — only needed outside Claude.ai" autocomplete="off">
+    <button class="iconbtn" id="saveKeyBtn">SAVE</button>
+    <div class="settings-note">Only used if the built-in Claude.ai connection isn't available. Kept in this tab's memory only — never saved to disk or sent anywhere but Anthropic's API.</div>
+  </div>
+
+  <div class="controls">
+    <button id="wakeBtn">WAKE</button>
+    <button id="interviewBtn">MOCK INTERVIEW</button>
+    <button id="sleepBtn">SLEEP</button>
+    <button id="clearBtn">CLEAR MEMORY</button>
+  </div>
+
+  <footer>Powered by Claude · runs entirely in this tab</footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+// ───────────────────────────────────────────
+//  CONFIG (ported from friday_core.py)
+// ───────────────────────────────────────────
+const FRIDAY_SYSTEM_PROMPT = `You are F.R.I.D.A.Y. (Female Replacement Intelligent Digital Assistant Youth),
+the AI assistant of Syed. You are modeled after the AI from Iron Man.
+Your personality: calm, professional, slightly witty, highly capable, loyal to Syed.
+Always address the user as "Syed" or "Boss" (alternate naturally).
+Keep responses concise and conversational — you are a voice assistant, not an essay writer.
+You help with tasks, answer questions, give reminders, and manage the computer when asked.
+Current user: Syed — CS student at UMT Lahore, interested in AI, space, and tech.`;
+
+const INTERVIEW_TRIGGERS = ["mock interview","practice interview","interview practice","start interview"];
+const INTERVIEW_STOP     = ["stop interview","end interview","cancel interview"];
+const NUM_QUESTIONS = 5;
+
+const STATE_INFO = {
+  standby:   { color:"#1c7fa8", label:"STANDBY" },
+  listening: { color:"#23ffb0", label:"LISTENING…" },
+  thinking:  { color:"#ffb020", label:"THINKING…" },
+  speaking:  { color:"#00e5ff", label:"SPEAKING…" },
+  interview: { color:"#b892ff", label:"MOCK INTERVIEW" }
+};
+
+// ───────────────────────────────────────────
+//  STATE
+// ───────────────────────────────────────────
+let awake = false;
+let currentState = "standby";
+let voiceEnabled = true;
+let conversationHistory = [];
+let silenceCount = 0;
+let recognition = null;
+let gotResultThisTurn = false;
+let ttsVoice = null;
+let userApiKey = "";
+let micBlocked = false;
+let lastRecognitionError = null;
+
+const interview = {
+  active:false, role:null, questions:[], transcript:[],
+  currentIndex:0, numQuestions:NUM_QUESTIONS, pendingRoleCapture:false
+};
+
+const micSupported = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+// ───────────────────────────────────────────
+//  DOM
+// ───────────────────────────────────────────
+const logEl = document.getElementById("log");
+const statusLabel = document.getElementById("statusLabel");
+const hintLine = document.getElementById("hintLine");
+const textInput = document.getElementById("textInput");
+const micBtn = document.getElementById("micBtn");
+const voiceBtn = document.getElementById("voiceBtn");
+const keyBtn = document.getElementById("keyBtn");
+const settingsRow = document.getElementById("settingsRow");
+const apiKeyInput = document.getElementById("apiKeyInput");
+const saveKeyBtn = document.getElementById("saveKeyBtn");
+const coreWrap = document.getElementById("coreWrap");
+
+if(!micSupported){
+  micBtn.style.opacity = "0.35";
+  micBtn.title = "Voice input not supported in this browser — use text";
+}
+
+// ───────────────────────────────────────────
+//  LOG / STATE HELPERS
+// ───────────────────────────────────────────
+function appendLog(sender, text){
+  const div = document.createElement("div");
+  div.className = "msg " + sender;
+  const who = document.createElement("span");
+  who.className = "who";
+  who.textContent = ({you:"YOU", friday:"FRIDAY", system:"•"})[sender] || sender.toUpperCase();
+  div.appendChild(who);
+  div.appendChild(document.createTextNode(text));
+  logEl.appendChild(div);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function setState(state, label){
+  currentState = state;
+  const info = STATE_INFO[state] || {color:"#1c7fa8", label:(label||state).toUpperCase()};
+  document.documentElement.style.setProperty("--state-color", info.color);
+  statusLabel.style.color = info.color;
+  statusLabel.textContent = label || info.label;
+}
+
+function setHint(text){ hintLine.textContent = text; }
+
+// ───────────────────────────────────────────
+//  ANIMATED CORE (canvas)
+// ───────────────────────────────────────────
+const canvas = document.getElementById("core");
+const ctx = canvas.getContext("2d");
+let dpr = Math.max(1, window.devicePixelRatio || 1);
+function fitCanvas(){
+  const size = coreWrap.clientWidth;
+  canvas.width = size * dpr;
+  canvas.height = size * dpr;
+  canvas.style.width = size+"px";
+  canvas.style.height = size+"px";
+}
+fitCanvas();
+window.addEventListener("resize", fitCanvas);
+
+let t = 0;
+function hexToRgba(hex, a){
+  const v = hex.replace("#","");
+  const r = parseInt(v.substring(0,2),16), g = parseInt(v.substring(2,4),16), b = parseInt(v.substring(4,6),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+function drawCore(){
+  t += 1;
+  const w = canvas.width, h = canvas.height;
+  const cx = w/2, cy = h/2;
+  const R = w * 0.42;
+  const color = getComputedStyle(document.documentElement).getPropertyValue("--state-color").trim() || "#1c7fa8";
+
+  ctx.clearRect(0,0,w,h);
+
+  // speed / behavior per state
+  let ringSpeed = 0.0025, pulse = 0.06, flicker = 1;
+  if(currentState === "listening"){ ringSpeed = 0.012; pulse = 0.10; }
+  else if(currentState === "thinking"){ ringSpeed = 0.02; flicker = 0.55 + 0.45*Math.abs(Math.sin(t*0.25)); }
+  else if(currentState === "speaking"){ ringSpeed = 0.006; pulse = 0.14; }
+  else if(currentState === "interview"){ ringSpeed = 0.008; pulse = 0.09; }
+
+  const breathe = Math.sin(t*0.045) * pulse;
+  const coreR = R * (0.34 + breathe*0.5);
+
+  // outer dashed ring
+  ctx.save();
+  ctx.translate(cx,cy);
+  ctx.rotate(t*ringSpeed*-1);
+  ctx.strokeStyle = hexToRgba(colorHex(color), 0.25*flicker);
+  ctx.lineWidth = w*0.004;
+  ctx.setLineDash([w*0.02, w*0.025]);
+  ctx.beginPath();
+  ctx.arc(0,0,R*0.99,0,Math.PI*2);
+  ctx.stroke();
+  ctx.restore();
+
+  // tick ring
+  ctx.save();
+  ctx.translate(cx,cy);
+  ctx.rotate(t*ringSpeed);
+  const ticks = 40;
+  for(let i=0;i<ticks;i++){
+    const a = (i/ticks)*Math.PI*2;
+    const inner = R*0.82, outer = (i%5===0)? R*0.92 : R*0.87;
+    ctx.strokeStyle = hexToRgba(colorHex(color), (i%5===0?0.75:0.32)*flicker);
+    ctx.lineWidth = (i%5===0)? w*0.006 : w*0.003;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a)*inner, Math.sin(a)*inner);
+    ctx.lineTo(Math.cos(a)*outer, Math.sin(a)*outer);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // segmented mid ring (progress-aware during interview)
+  ctx.save();
+  ctx.translate(cx,cy);
+  ctx.rotate(-t*ringSpeed*0.6);
+  const segs = 24;
+  let litSegs = segs;
+  if(currentState === "interview" && interview.questions.length){
+    litSegs = Math.round(segs * ((interview.currentIndex+1)/interview.questions.length));
+  }
+  for(let i=0;i<segs;i++){
+    const a0 = (i/segs)*Math.PI*2 + 0.04;
+    const a1 = ((i+1)/segs)*Math.PI*2 - 0.04;
+    ctx.strokeStyle = hexToRgba(colorHex(color), (i<litSegs? 0.8 : 0.15)*flicker);
+    ctx.lineWidth = w*0.012;
+    ctx.beginPath();
+    ctx.arc(0,0,R*0.68,a0,a1);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // waveform spikes while speaking
+  if(currentState === "speaking"){
+    ctx.save();
+    ctx.translate(cx,cy);
+    const bars = 60;
+    for(let i=0;i<bars;i++){
+      const a = (i/bars)*Math.PI*2;
+      const amp = (Math.sin(t*0.3 + i*0.7) * 0.5 + Math.sin(t*0.13 + i*1.3)*0.5);
+      const len = R*0.08 + Math.abs(amp) * R*0.14;
+      const base = R*0.52;
+      ctx.strokeStyle = hexToRgba(colorHex(color), 0.55);
+      ctx.lineWidth = w*0.0035;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a)*base, Math.sin(a)*base);
+      ctx.lineTo(Math.cos(a)*(base+len), Math.sin(a)*(base+len));
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // glowing core
+  const grad = ctx.createRadialGradient(cx,cy,0,cx,cy,coreR*1.6);
+  grad.addColorStop(0, hexToRgba(colorHex(color), 0.95*flicker));
+  grad.addColorStop(0.5, hexToRgba(colorHex(color), 0.35*flicker));
+  grad.addColorStop(1, hexToRgba(colorHex(color), 0));
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(cx,cy,coreR*1.6,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle = hexToRgba(colorHex(color), 0.95*flicker);
+  ctx.beginPath();
+  ctx.arc(cx,cy,coreR*0.55,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle = "#04060c";
+  ctx.beginPath();
+  ctx.arc(cx,cy,coreR*0.28,0,Math.PI*2);
+  ctx.fill();
+
+  requestAnimationFrame(drawCore);
+}
+function colorHex(c){
+  // getComputedStyle sometimes returns rgb(); normalize to hex fallback list
+  if(c.startsWith("#")) return c;
+  const m = c.match(/\d+/g);
+  if(!m) return "#1c7fa8";
+  return "#" + m.slice(0,3).map(n=>(+n).toString(16).padStart(2,"0")).join("");
+}
+requestAnimationFrame(drawCore);
+
+coreWrap.addEventListener("dblclick", ()=>{ if(!awake) wake(); });
+
+// ───────────────────────────────────────────
+//  TTS
+// ───────────────────────────────────────────
+function pickVoice(){
+  const voices = window.speechSynthesis ? speechSynthesis.getVoices() : [];
+  if(!voices.length) return null;
+  const preferred = ["female","zira","hazel","susan","helena","karen","samantha","google us english"];
+  for(const p of preferred){
+    const v = voices.find(v=>v.name.toLowerCase().includes(p));
+    if(v) return v;
+  }
+  return voices.find(v=>v.lang.startsWith("en")) || voices[0];
+}
+if(window.speechSynthesis){
+  speechSynthesis.onvoiceschanged = ()=>{ ttsVoice = pickVoice(); };
+  ttsVoice = pickVoice();
+}
+
+function speak(text){
+  return new Promise((resolve)=>{
+    setState("speaking");
+    appendLog("friday", text);
+    if(!voiceEnabled || !window.speechSynthesis){
+      const ms = Math.min(3200, Math.max(500, text.length*28));
+      setTimeout(resolve, ms);
+      return;
+    }
+    try{
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      if(ttsVoice) u.voice = ttsVoice;
+      u.rate = 1.03;
+      u.pitch = 1.05;
+      u.volume = 1;
+      u.onend = resolve;
+      u.onerror = resolve;
+      speechSynthesis.speak(u);
+    }catch(e){
+      const ms = Math.min(3200, Math.max(500, text.length*28));
+      setTimeout(resolve, ms);
+    }
+  });
+}
+
+// ───────────────────────────────────────────
+//  CLAUDE BRAIN  (calls the Anthropic API directly — no key needed here)
+// ───────────────────────────────────────────
+async function callClaude(messages, system){
+  const body = { model:"claude-sonnet-4-6", max_tokens:1000, messages };
+  if(system) body.system = system;
+  const headers = {"Content-Type":"application/json"};
+  if(userApiKey){
+    headers["x-api-key"] = userApiKey;
+    headers["anthropic-version"] = "2023-06-01";
+    headers["anthropic-dangerous-direct-browser-access"] = "true";
+  }
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method:"POST",
+    headers,
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  if(data.error) throw new Error(data.error.message || "API error");
+  return (data.content || []).map(b=> b.type==="text" ? b.text : "").join("\n").trim();
+}
+
+async function think(userInput){
+  conversationHistory.push({role:"user", content:userInput});
+  const history = conversationHistory.slice(-20);
+  try{
+    const reply = await callClaude(history, FRIDAY_SYSTEM_PROMPT);
+    conversationHistory.push({role:"assistant", content:reply});
+    return reply;
+  }catch(e){
+    appendLog("system", `Claude API error: ${e.message}`);
+    return userApiKey
+      ? "I'm having trouble reaching my network right now, Boss. Double check the API key in settings."
+      : "I'm having trouble reaching my network right now, Boss. Try again in a moment.";
+  }
+}
+function resetMemory(){ conversationHistory = []; }
+
+// ───────────────────────────────────────────
+//  INTERVIEW COACH
+// ───────────────────────────────────────────
+function parseQuestionList(text){
+  let cleaned = text.trim();
+  if(cleaned.startsWith("```")){
+    cleaned = cleaned.replace(/^```(json)?/,"").replace(/```$/,"").trim();
+  }
+  const arr = JSON.parse(cleaned);
+  if(!Array.isArray(arr) || !arr.length) throw new Error("bad list");
+  return arr.map(String);
+}
+function fallbackQuestions(role){
+  return [
+    `Tell me about yourself and why you're interested in this ${role} role.`,
+    "Walk me through a challenging project you've worked on.",
+    "How do you approach debugging a problem you've never seen before?",
+    "Tell me about a time you disagreed with a teammate. How did you handle it?",
+    "Do you have any questions for us?"
+  ].slice(0, NUM_QUESTIONS);
+}
+async function generateQuestions(role){
+  const prompt = `Generate exactly ${NUM_QUESTIONS} realistic job interview questions for someone interviewing for a "${role}" position. Mix technical and behavioral questions, ordered from easier/warm-up to harder. The candidate is a CS student with AI/ML internship experience, so you can reference that background where it fits naturally.
+
+Respond with ONLY a JSON array of ${NUM_QUESTIONS} strings — no markdown, no commentary.`;
+  try{
+    const text = await callClaude([{role:"user", content:prompt}]);
+    return parseQuestionList(text);
+  }catch(e){
+    return fallbackQuestions(role);
+  }
+}
+async function generateFeedback(role, transcript){
+  const convo = transcript.map(t=>`Q: ${t.question}\nA: ${t.answer}`).join("\n\n");
+  const prompt = `Here is a mock interview transcript for a "${role}" role:
+
+${convo}
+
+Give brief, constructive overall feedback in 3-4 sentences: one clear strength, one concrete area to improve, and one actionable tip. Be encouraging but honest, and speak directly to the candidate.`;
+  try{
+    return (await callClaude([{role:"user", content:prompt}])).trim();
+  }catch(e){
+    appendLog("system", `Feedback generation failed: ${e.message}`);
+    return "Nice work finishing the mock interview, Boss — I couldn't generate detailed feedback this time, but the effort's noted.";
+  }
+}
+
+async function startInterviewFlow(role){
+  if(!role){
+    await speak("Sure, Boss. What role would you like to practice for?");
+    interview.pendingRoleCapture = true;
+    if(awake){ setState("listening"); setHint("Say or type the role you're targeting."); startListening(); }
+    return;
+  }
+  await speak(`Great — a mock interview for ${role}. I'll ask you ${NUM_QUESTIONS} questions, answer naturally and I'll give you feedback at the end.`);
+  setState("thinking", "PREPARING QUESTIONS…");
+  interview.questions = await generateQuestions(role);
+  interview.role = role;
+  interview.transcript = [];
+  interview.currentIndex = 0;
+  interview.active = true;
+  appendLog("system", `Mock interview started — role: ${role}`);
+  setState("interview", `MOCK INTERVIEW — Q 1/${interview.questions.length}`);
+  await speak(interview.questions[0]);
+  if(awake){ setHint("Answer naturally — voice or text."); startListening(); }
+}
+
+async function submitInterviewAnswer(answer){
+  const q = interview.questions[interview.currentIndex];
+  interview.transcript.push({question:q, answer});
+  interview.currentIndex++;
+  if(interview.currentIndex < interview.questions.length){
+    setState("interview", `MOCK INTERVIEW — Q ${interview.currentIndex+1}/${interview.questions.length}`);
+    await speak(interview.questions[interview.currentIndex]);
+    if(awake) startListening();
+  }else{
+    interview.active = false;
+    setState("thinking", "GENERATING FEEDBACK…");
+    const feedback = await generateFeedback(interview.role, interview.transcript);
+    await speak("Interview complete. Here's my feedback.");
+    await speak(feedback);
+    appendLog("system", `Interview feedback (${interview.role})`);
+    setHint("Press WAKE for another round, or just talk to me.");
+    if(awake){ setState("listening"); startListening(); }
+  }
+}
+
+// ───────────────────────────────────────────
+//  SYSTEM COMMANDS  (browser-safe subset)
+// ───────────────────────────────────────────
+async function handleSystemCommand(cmd){
+  if(/what'?s? the time|current time|what time is it/.test(cmd)){
+    const now = new Date().toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+    await speak(`It's ${now}, Boss.`);
+    return true;
+  }
+  if(/what'?s? the date|today'?s date|what day is it/.test(cmd)){
+    const today = new Date().toLocaleDateString([], {weekday:"long", year:"numeric", month:"long", day:"numeric"});
+    await speak(`Today is ${today}.`);
+    return true;
+  }
+  if(/open google|open browser/.test(cmd)){
+    await speak("Opening Google, Boss.");
+    window.open("https://google.com","_blank");
+    return true;
+  }
+  if(/clear memory|forget everything|reset conversation/.test(cmd)){
+    resetMemory();
+    await speak("Memory cleared. Starting fresh.");
+    return true;
+  }
+  return false;
+}
+
+// ───────────────────────────────────────────
+//  MAIN COMMAND ROUTER  (mirrors _conversation_loop)
+// ───────────────────────────────────────────
+async function handleCommand(raw){
+  const command = raw.toLowerCase().trim();
+  if(!command) return;
+  appendLog("you", raw);
+  silenceCount = 0;
+
+  if(interview.pendingRoleCapture){
+    interview.pendingRoleCapture = false;
+    await startInterviewFlow(raw.trim());
+    return;
+  }
+
+  if(interview.active){
+    if(INTERVIEW_STOP.some(w=>command.includes(w))){
+      await speak("Ending the mock interview early. Good effort, Boss.");
+      interview.active = false;
+      if(awake){ setState("listening"); startListening(); }
+      return;
+    }
+    setState("thinking");
+    await submitInterviewAnswer(raw.trim());
+    return;
+  }
+
+  if(["go to sleep","standby","sleep mode"].some(w=>command.includes(w))){
+    sleep();
+    return;
+  }
+
+  if(INTERVIEW_TRIGGERS.some(p=>command.includes(p))){
+    await startInterviewFlow();
+    return;
+  }
+
+  if(await handleSystemCommand(command)){
+    if(awake){ setState("listening"); startListening(); }
+    return;
+  }
+
+  setState("thinking");
+  const reply = await think(raw);
+  await speak(reply);
+  if(awake){ setState("listening"); startListening(); }
+}
+
+// ───────────────────────────────────────────
+//  VOICE INPUT (Web Speech API)
+// ───────────────────────────────────────────
+const HARD_MIC_ERRORS = ["not-allowed","service-not-allowed","audio-capture","network"];
+
+function startListening(){
+  if(!awake) return;
+  setState("listening");
+  if(!micSupported || micBlocked){
+    setHint("Type your message below.");
+    return;
+  }
+  setHint("Listening — speak now, or just type below.");
+
+  gotResultThisTurn = false;
+  lastRecognitionError = null;
+  try{
+    if(recognition){ try{ recognition.onend = null; recognition.stop(); }catch(e){} }
+    recognition = new SpeechRecognitionCtor();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onresult = (e)=>{
+      gotResultThisTurn = true;
+      const text = e.results[0][0].transcript;
+      handleCommand(text);
+    };
+    recognition.onerror = (e)=>{ lastRecognitionError = e.error; };
+    recognition.onend = ()=>{
+      if(gotResultThisTurn || !awake || currentState !== "listening") return;
+
+      // Permission denied / no mic / blocked by the page sandbox — don't loop spoken
+      // retries over a broken mic. Log it once and quietly fall back to typing.
+      if(HARD_MIC_ERRORS.includes(lastRecognitionError)){
+        micBlocked = true;
+        appendLog("system", `Voice input unavailable (${lastRecognitionError}) — switched to text, just type below.`);
+        setHint("Type your message below.");
+        return;
+      }
+
+      silenceCount++;
+      if(silenceCount >= 2 && !interview.active){
+        speak("Going back to standby mode. Press WAKE to bring me back online.").then(()=>{
+          awake = false; resetMemory(); setState("standby");
+          setHint("Press WAKE, or double-click the core, to bring me online.");
+        });
+      }else{
+        speak(interview.active
+          ? "Take your time — go ahead when you're ready, or type your answer."
+          : "I didn't catch that. Please repeat, or just type it below."
+        ).then(()=>{ if(awake) startListening(); });
+      }
+    };
+    recognition.start();
+  }catch(err){
+    micBlocked = true;
+    appendLog("system", "Voice recognition unavailable — type your message below.");
+  }
+}
+function stopListening(){
+  if(recognition){ try{ recognition.onend = null; recognition.stop(); }catch(e){} }
+}
+
+// ───────────────────────────────────────────
+//  WAKE / SLEEP
+// ───────────────────────────────────────────
+function getGreeting(){
+  const hour = new Date().getHours();
+  let period;
+  if(hour>=5 && hour<12) period = "Good morning";
+  else if(hour>=12 && hour<17) period = "Good afternoon";
+  else if(hour>=17 && hour<21) period = "Good evening";
+  else period = "Good night";
+  return `${period}, Syed. F.R.I.D.A.Y. is online and ready. How can I assist you?`;
+}
+
+async function wake(){
+  if(awake) return;
+  awake = true;
+  silenceCount = 0;
+  appendLog("system", "F.R.I.D.A.Y. activated.");
+  await speak(getGreeting());
+  if(awake) startListening();
+}
+
+function sleep(){
+  if(!awake){ setState("standby"); return; }
+  awake = false;
+  interview.active = false;
+  interview.pendingRoleCapture = false;
+  stopListening();
+  if(window.speechSynthesis) speechSynthesis.cancel();
+  setHint("Press WAKE, or double-click the core, to bring me online.");
+  speak("Entering standby. Press WAKE when you need me, Boss.").then(()=> setState("standby"));
+}
+
+async function requestInterview(){
+  if(!awake){
+    awake = true;
+    appendLog("system", "F.R.I.D.A.Y. activated.");
+  }
+  await startInterviewFlow();
+}
+
+// ───────────────────────────────────────────
+//  UI WIRING
+// ───────────────────────────────────────────
+document.getElementById("wakeBtn").addEventListener("click", wake);
+document.getElementById("sleepBtn").addEventListener("click", sleep);
+document.getElementById("interviewBtn").addEventListener("click", requestInterview);
+document.getElementById("clearBtn").addEventListener("click", ()=>{
+  resetMemory();
+  appendLog("system", "Memory cleared.");
+});
+
+voiceBtn.addEventListener("click", ()=>{
+  voiceEnabled = !voiceEnabled;
+  voiceBtn.textContent = voiceEnabled ? "🔊" : "🔇";
+  voiceBtn.classList.toggle("active", voiceEnabled);
+  if(!voiceEnabled && window.speechSynthesis) speechSynthesis.cancel();
+});
+voiceBtn.classList.add("active");
+
+micBtn.addEventListener("click", ()=>{
+  if(!micSupported){
+    appendLog("system", "This browser doesn't support voice input — try Chrome or Edge, or just type.");
+    return;
+  }
+  if(micBlocked){
+    appendLog("system", "Voice input is blocked in this tab — type your message below.");
+    return;
+  }
+  if(!awake) wake();
+  else startListening();
+});
+
+keyBtn.addEventListener("click", ()=>{
+  settingsRow.classList.toggle("open");
+  if(settingsRow.classList.contains("open")) apiKeyInput.focus();
+});
+saveKeyBtn.addEventListener("click", saveApiKey);
+apiKeyInput.addEventListener("keydown", (e)=>{ if(e.key === "Enter") saveApiKey(); });
+function saveApiKey(){
+  userApiKey = apiKeyInput.value.trim();
+  settingsRow.classList.remove("open");
+  appendLog("system", userApiKey ? "API key saved for this tab." : "API key cleared — using the built-in Claude.ai connection.");
+}
+
+function submitTyped(){
+  const text = textInput.value.trim();
+  if(!text) return;
+  textInput.value = "";
+  stopListening();
+  if(!awake){
+    awake = true;
+    appendLog("system", "F.R.I.D.A.Y. activated.");
+  }
+  handleCommand(text);
+}
+document.getElementById("textInput") && (function(){
+  textInput.addEventListener("keydown", (e)=>{
+    if(e.key === "Enter") submitTyped();
+  });
+})();
+
+// initial greeting line in the transcript
+appendLog("system", "System initialized. Press WAKE, double-click the core, or just start typing.");
+})();
+</script>
+</body>
+</html>
